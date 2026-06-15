@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import path from "path";
 import Groq from "groq-sdk";
 import { University, CareerProfession, Lead } from "../frontend/src/types";
 import dotenv from "dotenv";
@@ -430,6 +431,17 @@ ${JSON.stringify(uniContext)}
 function dbErr(res: express.Response, error: any) {
   console.error("DB error:", error?.message || error);
   res.status(500).json({ error: "Ошибка базы данных" });
+}
+
+// ==========================================
+// STATIC FRONTEND (production)
+// ==========================================
+
+if (process.env.NODE_ENV === "production") {
+  app.use(express.static(path.join(__dirname, ".")));
+  app.get("*", (_req, res) => {
+    res.sendFile(path.join(__dirname, "index.html"));
+  });
 }
 
 // ==========================================
