@@ -1,0 +1,94 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "SF Pro Display", "SF Pro Text", -apple-system, BlinkMacSystemFont, "Inter", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "SF Mono", "JetBrains Mono", ui-monospace, monospace;
+
+  --color-pine-deep: #051F20;      /* Очень глубокий хвойный */
+  --color-emerald-base: #0B2B26;   /* Темно-изумрудный */
+  --color-green-muted: #163832;    /* Приглушенный зеленый */
+  --color-forest-accent: #235347;  /* Насыщенный лесной */
+  --color-mint-sage: #8EB69B;      /* Шалфейный / Мятный */
+  --color-mint-milk: #E2F4E9;      /* Мятно-молочный */
+}
+
+/* Base styles and defaults */
+html, body {
+  background-color: #E2F4E9 !important; /* Мятно-молочный фоновый цвет */
+  color: #051F20 !important;              /* Очень глубокий хвойный для качественного чтения */
+  font-family: var(--font-sans) !important;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Support elegant custom selections */
+::selection {
+  background-color: #8EB69B;
+  color: #051F20;
+}
+
+/* Clean, modern scrollbar in Apple aesthetics */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #E2F4E9;
+}
+::-webkit-scrollbar-thumb {
+  background: #8EB69B;
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #235347;
+}
+
+/* Apple design principles: soft card shadows, state transition easing */
+.shadow-apple {
+  box-shadow: 0 4px 30px rgba(5, 31, 32, 0.03), 0 1px 3px rgba(5, 31, 32, 0.02);
+}
+.shadow-apple-hover {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.shadow-apple-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px rgba(5, 31, 32, 0.06), 0 2px 8px rgba(5, 31, 32, 0.03);
+}
+
+/* Animations for premium cinematic feel, without breaking performance */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+p, span, li, select, input, button, textarea, h1, h2, h3, h4, h5, h6 {
+  line-height: 1.5 !important;
+  text-rendering: optimizeLegibility !important;
+}
+
+/* Override input highlights */
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: #235347 !important;
+  box-shadow: 0 0 0 2px rgba(35, 83, 71, 0.15);
+}
+
+/* High contrast color helpers on dark layers */
+.text-white-override {
+  color: #ffffff !important;
+}
+.text-mint-override {
+  color: #8EB69B !important;
+}

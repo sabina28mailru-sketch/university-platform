@@ -1,0 +1,6 @@
+{
+  "name": "Каталог ВУЗов Казахстана",
+  "description": "Цифровая платформа поиска, сравнения и подбора университетов Казахстана с искусственным AI-помощником и CMS",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

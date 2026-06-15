@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Recurse -Depth 3)",
+      "Bash(Select-Object FullName, PSIsContainer)",
+      "Bash(Sort-Object FullName)",
+      "Bash(npm install *)",
+      "Bash(timeout 8 npx tsx backend/server.ts)",
+      "Bash(echo \"EXIT:$?\")",
+      "Bash(npx tsc *)",
+      "Bash(node -e \"const { Pool } = require\\('pg'\\); const p = new Pool\\({host:'localhost',port:5432,database:'university_platform',user:'postgres',password:'bauka07'}\\); p.query\\('SELECT 1'\\).then\\(\\(\\)=>{ console.log\\('OK'\\); p.end\\(\\); }\\).catch\\(e=>{ console.log\\('ERROR:', e.message\\); p.end\\(\\); }\\);\")",
+      "Bash(node -e \"const { Pool } = require\\('pg'\\); const p = new Pool\\({host:'localhost',port:5432,database:'postgres',user:'postgres',password:'bauka07'}\\); p.query\\('SELECT datname FROM pg_database'\\).then\\(r=>{ console.log\\('Databases:', r.rows.map\\(x=>x.datname\\).join\\(', '\\)\\); p.end\\(\\); }\\).catch\\(e=>{ console.log\\('ERROR:', e.message\\); p.end\\(\\); }\\);\")",
+      "Bash(node -e \"const { Pool } = require\\('pg'\\); const p = new Pool\\({host:'localhost',port:5432,database:'postgres',user:'postgres',password:'bauka07'}\\); p.query\\('CREATE DATABASE university_platform'\\).then\\(\\(\\)=>{ console.log\\('OK: database created'\\); p.end\\(\\); }\\).catch\\(e=>{ console.log\\('ERROR:', e.message\\); p.end\\(\\); }\\);\")",
+      "Bash(npm run *)",
+      "Bash(curl -s http://localhost:3000/api/universities)",
+      "Bash(curl -s http://localhost:5173)"
+    ]
+  }
+}
