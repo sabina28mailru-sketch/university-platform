@@ -23,20 +23,23 @@ function parseJson(val: any, fallback: any = []) {
 export const pool = {
   async query(sql: string, params: any[] = []) {
     try {
-      let sqliteQuery = sql;
+      // Extract $N order as they appear in the SQL, then replace with ?
+      const order: number[] = [];
+      const sqliteQuery = sql.replace(/\$(\d+)/g, (_, n) => {
+        order.push(Number(n) - 1);
+        return "?";
+      });
 
-      // Replace $N placeholders with ? — iterate in reverse so $10 is replaced before $1
-      for (let i = params.length; i >= 1; i--) {
-        sqliteQuery = sqliteQuery.replace(new RegExp(`\\$${i}`, "g"), "?");
-      }
+      // Reorder params to match the ? positions in the converted SQL
+      const reorderedParams = order.map(i => params[i]);
 
       if (sqliteQuery.toLowerCase().trimStart().startsWith("select")) {
         const stmt = db.prepare(sqliteQuery);
-        const rows = stmt.all(...params);
+        const rows = stmt.all(...reorderedParams);
         return { rows, rowCount: rows.length };
       } else {
         const stmt = db.prepare(sqliteQuery);
-        const result = stmt.run(...params);
+        const result = stmt.run(...reorderedParams);
         return { rows: [], changes: result.changes, rowCount: result.changes };
       }
     } catch (error) {
