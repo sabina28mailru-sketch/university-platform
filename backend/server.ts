@@ -1,7 +1,11 @@
 import express from "express";
 import cors from "cors";
 import path from "path";
+import { fileURLToPath } from "url";
 import Groq from "groq-sdk";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 import { University, CareerProfession, Lead } from "../frontend/src/types";
 import dotenv from "dotenv";
 import { pool, initDB, uniFromRow, careerFromRow, userFromRow } from "./db";
