@@ -1,11 +1,7 @@
 import express from "express";
 import cors from "cors";
 import path from "path";
-import { fileURLToPath } from "url";
 import Groq from "groq-sdk";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 import { University, CareerProfession, Lead } from "../frontend/src/types";
 import dotenv from "dotenv";
 import { pool, initDB, uniFromRow, careerFromRow, userFromRow } from "./db";
@@ -442,9 +438,10 @@ function dbErr(res: express.Response, error: any) {
 // ==========================================
 
 if (process.env.NODE_ENV === "production") {
-  app.use(express.static(path.join(__dirname, ".")));
+  const distDir = path.join(process.cwd(), "dist");
+  app.use(express.static(distDir));
   app.get("*", (_req, res) => {
-    res.sendFile(path.join(__dirname, "index.html"));
+    res.sendFile(path.join(distDir, "index.html"));
   });
 }
 
