@@ -2,6 +2,12 @@ export interface Specialty {
   name: string;
   code: string;
   description: string;
+  tuitionFee?: number;         // Годовая стоимость этой программы
+  collegeTransferFee?: number; // Стоимость для поступающих после колледжа
+  entMinScore?: number;        // Мин. балл ЕНТ для данной специальности
+  duration?: string;           // Срок обучения: "4 года", "5 лет" и т.д.
+  hasGrant?: boolean;          // Наличие грантовых мест
+  grantPlaces?: number;        // Кол-во грантовых мест
 }
 
 export interface Faculty {
@@ -78,4 +84,11 @@ export interface DynamicBlocks {
     text: string;
     stats: { label: string; value: string }[];
   };
+  extraSections?: {
+    id: string;
+    title: string;
+    text: string;
+    imageUrl: string;
+    imagePosition: "left" | "right";
+  }[];
 }

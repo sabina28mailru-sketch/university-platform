@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { GraduationCap, MapPin, Sparkles, Building2, Clipboard, Globe2, BookOpen, AlertCircle, Award, Heart, ShieldAlert, CheckCircle2 } from "lucide-react";
 import { University, CareerProfession, Lead, DynamicBlocks } from "./types";
 
 // Import modules
@@ -503,7 +502,7 @@ export default function App() {
         <div className="kz-container px-6 grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
           
           <div className="space-y-1 text-center md:text-left">
-            <span className="font-bold text-white text-sm block">🎓 Каталог ВУЗов Казахстана</span>
+            <span className="font-bold text-white text-sm block">Каталог ВУЗов Казахстана</span>
             <p className="text-[11px] leading-relaxed max-w-md text-[#8EB69B]/85">
               Я просто студент КЖ, который делает этот проект в качестве дипломной работы по разработке удобной системы подбора и изучения учебных заведений Казахстана.
             </p>

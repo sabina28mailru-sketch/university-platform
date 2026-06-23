@@ -42,8 +42,8 @@ export default function CatalogScreen({ universities, onRefresh }: CatalogScreen
   // Filter states
   const [searchQuery, setSearchQuery] = useState("");
   const [studentType, setStudentType] = useState<"school" | "college">("school");
-  const [minEntScore, setMinEntScore] = useState<number>(50);
-  const [maxBudget, setMaxBudget] = useState<number>(4000000);
+  const [minEntScore, setMinEntScore] = useState<number>(0);
+  const [maxBudget, setMaxBudget] = useState<number>(5000000);
   const [selectedLanguages, setSelectedLanguages] = useState<string[]>([]);
   const [onlyWithHostel, setOnlyWithHostel] = useState(false);
   const [onlyWithGrants, setOnlyWithGrants] = useState(false);
@@ -68,8 +68,8 @@ export default function CatalogScreen({ universities, onRefresh }: CatalogScreen
   const handleResetFilters = () => {
     setSearchQuery("");
     setStudentType("school");
-    setMinEntScore(50);
-    setMaxBudget(4000000);
+    setMinEntScore(0);
+    setMaxBudget(5000000);
     setSelectedLanguages([]);
     setOnlyWithHostel(false);
     setOnlyWithGrants(false);
@@ -101,15 +101,21 @@ export default function CatalogScreen({ universities, onRefresh }: CatalogScreen
         return false;
       }
 
-      // 3. Tuition Budget Match
-      if (maxBudget <= 750000) {
-        if (!uni.hasGrants) {
-          return false;
-        }
-      } else if (uni.tuitionFee > maxBudget) {
-        if (!uni.hasGrants) {
-          return false;
-        }
+      // 3. Tuition Budget Match — учитываем стоимость после колледжа
+      const collegeMinFee = (() => {
+        const fees = uni.faculties?.flatMap(f =>
+          (f.specialties || []).filter(sp => sp.collegeTransferFee).map(sp => sp.collegeTransferFee as number)
+        ) || [];
+        return fees.length > 0 ? Math.min(...fees) : null;
+      })();
+      const effectiveFee = (studentType === "college" && collegeMinFee !== null)
+        ? collegeMinFee
+        : uni.tuitionFee;
+
+      if (maxBudget < 900000) {
+        if (!uni.hasGrants) return false;
+      } else if (effectiveFee > maxBudget) {
+        if (!uni.hasGrants) return false;
       }
 
       // 4. Languages Match
@@ -176,114 +182,99 @@ export default function CatalogScreen({ universities, onRefresh }: CatalogScreen
             {filteredUniversities.map((uni) => {
               const coverImg = uni.imageUrl || getUniversityFallbackImage(uni.id, uni.name);
               return (
-                <div 
-                  key={uni.id} 
-                  className="bg-white border border-[#8EB69B]/15 rounded-[22px] overflow-hidden hover:shadow-apple-hover hover:scale-[1.005] transition-all duration-300 flex flex-col justify-between"
+                <div
+                  key={uni.id}
+                  className="bg-white border border-[#8EB69B]/10 rounded-[20px] overflow-hidden hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 flex flex-col"
                 >
-                  <div className="h-36 w-full overflow-hidden relative group bg-neutral-100 flex-shrink-0">
-                    <img 
-                      src={coverImg} 
-                      alt={uni.name} 
+                  {/* Clickable image */}
+                  <div
+                    className="h-44 w-full overflow-hidden relative flex-shrink-0 cursor-pointer group"
+                    onClick={() => setActiveUni(uni)}
+                  >
+                    <img
+                      src={coverImg}
+                      alt={uni.name}
                       referrerPolicy="no-referrer"
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      onError={(e) => { const el = e.currentTarget as HTMLImageElement; if (!el.src.includes('unsplash.com')) { el.src = getUniversityFallbackImage(uni.id, uni.name); } }}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none"></div>
-                    <div className="absolute bottom-2.5 left-3 flex items-center gap-1.5 pointer-events-none">
-                      <span className="text-[8px] font-mono font-bold uppercase tracking-widest text-white bg-[#235347] px-2 py-0.5 rounded">
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#051F20]/75 via-[#051F20]/10 to-transparent pointer-events-none" />
+                    {/* Hover overlay */}
+                    <div className="absolute inset-0 bg-[#235347]/35 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                      <div className="bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-xl shadow-lg">
+                        <span className="text-[#235347] text-xs font-bold">Открыть профиль →</span>
+                      </div>
+                    </div>
+                    {/* ID badge */}
+                    <div className="absolute top-3 left-3 pointer-events-none">
+                      <span className="text-[8px] font-mono font-bold uppercase tracking-widest text-white bg-[#235347]/85 backdrop-blur-sm px-2 py-0.5 rounded-lg shadow-sm">
                         {uni.id.toUpperCase()}
                       </span>
                     </div>
-                    <div className="absolute top-2.5 right-3 bg-white/95 backdrop-blur-3xs px-2.5 py-1 rounded-lg border border-slate-200/50">
-                      <span className="text-[8px] text-slate-400 block leading-tight text-right">Стоимость</span>
-                      <strong className="text-xs text-[#235347] font-black block leading-none text-right">
-                        {uni.tuitionFee?.toLocaleString()} ₸
-                      </strong>
+                    {/* Price badge */}
+                    <div className="absolute top-3 right-3 bg-white/92 backdrop-blur-sm px-2.5 py-1.5 rounded-xl border border-white/60 shadow-lg pointer-events-none">
+                      <span className="text-[8px] text-slate-400 block leading-none text-right">от</span>
+                      <strong className="text-xs text-[#235347] font-black block leading-tight text-right">{(uni.tuitionFee / 1000000).toFixed(1)} млн ₸</strong>
+                    </div>
+                    {/* Name overlay on image bottom */}
+                    <div className="absolute bottom-3 left-3 right-3 pointer-events-none">
+                      <h3 className="text-white font-bold text-xs leading-snug line-clamp-2 drop-shadow-md">{uni.name}</h3>
+                      <p className="text-white/65 text-[9px] mt-0.5 truncate">📍 {uni.address}</p>
                     </div>
                   </div>
 
-                  <div className="p-5 flex-1 flex flex-col justify-between space-y-3">
-                    <div className="space-y-2.5">
-                      <div className="space-y-1">
-                        <h3 className="text-xs md:text-sm font-bold text-[#051F20] leading-snug line-clamp-2 min-h-[2.5rem]" title={uni.name}>
-                          {uni.name}
-                        </h3>
-                        <p className="text-[#163832]/70 text-[10px] line-clamp-1">
-                          📍 {uni.address}
-                        </p>
-                      </div>
+                  <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
+                    {uni.description && (
+                      <p className="text-[10px] text-slate-500 leading-relaxed line-clamp-2">{uni.description}</p>
+                    )}
 
-                      {uni.description && (
-                        <p className="text-[10px] text-slate-500 leading-relaxed line-clamp-2" title={uni.description}>
-                          {uni.description}
-                        </p>
+                    <div className="flex flex-wrap gap-1 text-[9px] font-bold">
+                      <span className="px-2 py-0.5 bg-amber-50 text-amber-600 border border-amber-100 rounded-lg">
+                        ЕНТ {studentType === "school" ? uni.entMinSchool : uni.entMinCollege}+
+                      </span>
+                      {uni.hasHostel && (
+                        <span className="px-2 py-0.5 bg-[#E2F4E9] text-[#235347] border border-[#8EB69B]/20 rounded-lg">Общежитие</span>
                       )}
-
-                      <div className="flex flex-wrap gap-1 text-[9px] font-bold">
-                        <span className="px-1.5 py-0.5 bg-amber-50 text-amber-700 border border-amber-200/50 rounded">
-                          ЕНТ: {studentType === "school" ? uni.entMinSchool : uni.entMinCollege} б.
-                        </span>
-                        <span className={`px-1.5 py-0.5 border rounded ${uni.hasHostel ? "bg-[#E2F4E9] border-[#8EB69B]/20 text-[#235347]" : "bg-red-50 border-red-100 text-red-700"}`}>
-                          Общежитие: {uni.hasHostel ? "Есть" : "Нет"}
-                        </span>
-                        {uni.hasGrants && (
-                          <span className="px-1.5 py-0.5 bg-blue-50 border border-blue-105 text-blue-800 rounded">
-                            Гранты
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Dynamic matched professions */}
-                      {(() => {
-                        const available = getAvailableProfessionsForUniversity(uni);
-                        if (available.length === 0) return null;
-                        return (
-                          <div className="space-y-1.5 pt-1">
-                            <span className="text-[10px] font-bold text-[#235347] uppercase tracking-wider block">
-                              💼 Профессии в ВУЗе ({available.length}):
-                            </span>
-                            <div className="flex flex-wrap gap-1">
-                              {available.slice(0, 5).map((ap, apIdx) => (
-                                <span 
-                                  key={apIdx} 
-                                  className="px-2 py-0.5 bg-slate-50 text-slate-700 border border-slate-200/60 rounded-md text-[9px] font-semibold flex items-center gap-1"
-                                  title={`${ap.professionName} (${ap.subcategory} - ${ap.specialtyName})`}
-                                >
-                                  <span className="text-[8px] text-[#235347] font-mono font-black">{ap.bCode}</span>
-                                  <span className="truncate max-w-[130px]">{ap.professionName}</span>
-                                </span>
-                              ))}
-                              {available.length > 5 && (
-                                <span className="px-1.5 py-0.5 bg-[#E2F4E9]/50 text-[#235347] border border-[#8EB69B]/20 rounded-md text-[9px] font-black">
-                                  + еще {available.length - 5}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })()}
-
-                      <div className="text-[10px] text-slate-600 bg-slate-50 p-3 text-left rounded-xl border border-slate-100 space-y-1">
-                        <div className="leading-tight">
-                          <span className="text-slate-400 block text-[9px] font-bold">Приемная комиссия</span>
-                          <span className="text-[#051F20] font-semibold line-clamp-1">{uni.contacts}</span>
-                        </div>
-                        <div className="leading-tight pt-1 border-t border-slate-100">
-                          <span className="text-slate-400 block text-[9px] font-bold">Сроки подачи</span>
-                          <span className="text-[#051F20] font-semibold line-clamp-1" title={uni.deadlines}>{uni.deadlines}</span>
-                        </div>
-                      </div>
+                      {uni.hasGrants && (
+                        <span className="px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-100 rounded-lg">Грант</span>
+                      )}
+                      {uni.hasQuotas && (
+                        <span className="px-2 py-0.5 bg-violet-50 text-violet-700 border border-violet-100 rounded-lg">Квота</span>
+                      )}
                     </div>
 
-                    <div className="flex items-center justify-between pt-2 border-t border-[#8EB69B]/10">
-                      <span className="text-[9px] font-bold text-[#235347]">
-                        Языки: {uni.languages.map(l => l.toUpperCase()).join(", ")}
-                      </span>
+                    {(() => {
+                      const available = getAvailableProfessionsForUniversity(uni);
+                      if (available.length === 0) return null;
+                      return (
+                        <div className="space-y-1">
+                          <span className="text-[9px] font-bold text-[#235347] uppercase tracking-wider block">
+                            Профессии ({available.length}):
+                          </span>
+                          <div className="flex flex-wrap gap-1">
+                            {available.slice(0, 3).map((ap, apIdx) => (
+                              <span key={apIdx} className="px-1.5 py-0.5 bg-slate-50 text-slate-700 border border-slate-200/60 rounded-md text-[9px] font-semibold flex items-center gap-1">
+                                <span className="text-[8px] text-[#235347] font-mono font-black">{ap.bCode}</span>
+                                <span className="truncate max-w-[100px]">{ap.professionName}</span>
+                              </span>
+                            ))}
+                            {available.length > 3 && (
+                              <span className="px-1.5 py-0.5 bg-[#E2F4E9]/50 text-[#235347] border border-[#8EB69B]/20 rounded-md text-[9px] font-black">+{available.length - 3}</span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })()}
 
-                      <button 
+                    <div className="flex items-center justify-between pt-2.5 border-t border-slate-100">
+                      <span className="text-[9px] font-semibold text-slate-400">
+                        {uni.languages.map(l => l.toUpperCase()).join(" · ")}
+                      </span>
+                      <button
                         onClick={() => setActiveUni(uni)}
-                        className="px-3.5 py-1.5 bg-[#235347] hover:bg-[#0B2B26] transition text-white rounded-xl text-[10px] font-bold"
+                        className="px-3 py-1.5 bg-[#235347] hover:bg-[#0B2B26] transition text-white rounded-xl text-[10px] font-bold"
                       >
-                        Детали
+                        Детали →
                       </button>
                     </div>
                   </div>
@@ -357,40 +348,51 @@ export default function CatalogScreen({ universities, onRefresh }: CatalogScreen
                 </div>
               </div>
 
-              {/* Minimum ENT slider */}
+              {/* ENT score slider */}
               <div className="space-y-1.5">
                 <div className="flex justify-between text-xs font-bold text-[#051F20]">
-                  <span>Порог баллов ЕНТ:</span>
-                  <span className="text-[#235347] font-extrabold">{minEntScore} из 140</span>
+                  <span>Мои баллы ЕНТ{studentType === "college" ? " (после колледжа)" : ""}:</span>
+                  <span className="text-[#235347] font-extrabold">
+                    {minEntScore === 0 ? "Любой балл" : `${minEntScore} из 140`}
+                  </span>
                 </div>
                 <input
                   type="range"
-                  min="50"
+                  min="0"
                   max="140"
+                  step="1"
                   value={minEntScore}
                   onChange={(e) => setMinEntScore(Number(e.target.value))}
                   className="w-full accent-[#235347] cursor-pointer"
                 />
-                <p className="text-[10px] text-slate-400 leading-tight">Скрывает учебные заведения, где минимальный проходной порог выше Ваших баллов.</p>
+                <div className="flex justify-between text-[9px] text-slate-400">
+                  <span>0</span>
+                  <span className="text-slate-300">Показываем ВУЗы с порогом ≤ {minEntScore === 0 ? "любым" : minEntScore}</span>
+                  <span>140</span>
+                </div>
               </div>
 
               {/* Tuition slider */}
               <div className="space-y-1.5">
                 <div className="flex justify-between text-xs font-bold text-[#051F20]">
-                  <span>Годовой бюджет коммерции:</span>
+                  <span>Бюджет{studentType === "college" ? " (после колл.)" : "/год"}:</span>
                   <span className="text-[#235347] font-extrabold">
-                    {maxBudget <= 750000 ? "Грант / Бесплатно" : (maxBudget >= 4000000 ? "Любой бюджет" : `${maxBudget.toLocaleString()} ₸/год`)}
+                    {maxBudget < 900000 ? "Только грант" : (maxBudget >= 5000000 ? "Без ограничений" : `до ${maxBudget.toLocaleString()} ₸`)}
                   </span>
                 </div>
                 <input
                   type="range"
-                  min="750000"
-                  max="4000000"
+                  min="500000"
+                  max="5000000"
                   step="50000"
                   value={maxBudget}
                   onChange={(e) => setMaxBudget(Number(e.target.value))}
                   className="w-full accent-[#235347] cursor-pointer"
                 />
+                <div className="flex justify-between text-[9px] text-slate-400">
+                  <span>Грант</span>
+                  <span>5 млн ₸</span>
+                </div>
               </div>
 
               {/* Languages selection */}
@@ -472,79 +474,96 @@ export default function CatalogScreen({ universities, onRefresh }: CatalogScreen
                     {displayedUniversities.map((uni) => {
                       const coverImg = uni.imageUrl || getUniversityFallbackImage(uni.id, uni.name);
                       return (
-                        <div 
-                          key={uni.id} 
-                          className="bg-white border border-[#8EB69B]/15 rounded-[22px] overflow-hidden hover:shadow-apple-hover hover:scale-[1.002] transition-all duration-300 flex flex-col sm:flex-row justify-between"
+                        <div
+                          key={uni.id}
+                          className="bg-white border border-[#8EB69B]/10 rounded-[22px] overflow-hidden hover:shadow-2xl hover:-translate-y-0.5 transition-all duration-300 flex flex-col sm:flex-row"
                         >
-                          {/* Left/Top visual of university */}
-                          <div className="h-32 sm:h-auto sm:w-48 overflow-hidden relative group bg-neutral-100 flex-shrink-0">
-                            <img 
-                              src={coverImg} 
-                              alt={uni.name} 
+                          {/* Clickable image */}
+                          <div
+                            className="h-48 sm:h-auto sm:w-64 overflow-hidden relative flex-shrink-0 cursor-pointer group"
+                            onClick={() => setActiveUni(uni)}
+                          >
+                            <img
+                              src={coverImg}
+                              alt={uni.name}
                               referrerPolicy="no-referrer"
-                              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                              onError={(e) => { const el = e.currentTarget as HTMLImageElement; if (!el.src.includes('unsplash.com')) { el.src = getUniversityFallbackImage(uni.id, uni.name); } }}
+                              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                             />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none"></div>
-                            <div className="absolute bottom-2.5 left-3 flex items-center gap-1.5 pointer-events-none">
-                              <span className="text-[8px] font-mono font-bold uppercase tracking-widest text-white bg-[#235347] px-2 py-0.5 rounded shadow-sm">
+                            <div className="absolute inset-0 bg-gradient-to-t from-[#051F20]/65 via-[#051F20]/15 to-transparent pointer-events-none sm:bg-gradient-to-r sm:from-transparent sm:to-transparent" />
+                            {/* Hover overlay */}
+                            <div className="absolute inset-0 bg-[#235347]/35 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                              <div className="bg-white/90 backdrop-blur-sm px-4 py-2 rounded-xl shadow-lg border border-white/50">
+                                <span className="text-[#235347] text-xs font-bold">Открыть профиль</span>
+                              </div>
+                            </div>
+                            {/* ID badge */}
+                            <div className="absolute top-3 left-3 pointer-events-none">
+                              <span className="text-[8px] font-mono font-bold uppercase tracking-widest text-white bg-[#235347]/85 backdrop-blur-sm px-2 py-0.5 rounded-lg shadow-sm">
                                 {uni.id.toUpperCase()}
                               </span>
                             </div>
+                            {/* Mobile price badge */}
+                            <div className="absolute bottom-3 right-3 sm:hidden bg-white/92 backdrop-blur-sm px-2.5 py-1.5 rounded-xl border border-white/60 shadow-lg pointer-events-none">
+                              <span className="text-[8px] text-slate-400 block leading-none">от</span>
+                              <strong className="text-xs text-[#235347] font-black block">{(uni.tuitionFee / 1000000).toFixed(1)} млн ₸</strong>
+                            </div>
                           </div>
 
-                          {/* Body Panel info */}
-                          <div className="p-5 flex-grow flex flex-col justify-between space-y-3">
-                            <div className="space-y-1.5">
-                              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
-                                <h3 className="text-xs md:text-sm font-bold text-[#051F20] leading-snug line-clamp-1" title={uni.name}>
+                          {/* Content panel */}
+                          <div className="p-5 flex-1 flex flex-col justify-between gap-3">
+                            <div className="space-y-2">
+                              <div className="flex items-start justify-between gap-3">
+                                <h3 className="text-sm font-bold text-[#051F20] leading-snug line-clamp-2 flex-1" title={uni.name}>
                                   {uni.name}
                                 </h3>
-                                <span className="text-xs text-[#235347] font-black whitespace-nowrap">
-                                  {uni.tuitionFee?.toLocaleString()} ₸/год
-                                </span>
+                                {/* Desktop price */}
+                                <div className="hidden sm:block text-right flex-shrink-0 bg-[#E2F4E9]/50 px-3 py-1.5 rounded-xl border border-[#8EB69B]/15">
+                                  <span className="text-[8px] text-slate-400 block leading-none">от</span>
+                                  <strong className="text-sm text-[#235347] font-black block leading-tight">{uni.tuitionFee?.toLocaleString()} ₸</strong>
+                                  <span className="text-[8px] text-slate-400 block leading-none">в год</span>
+                                </div>
                               </div>
-
-                              <p className="text-[#163832]/80 text-[10px]">
-                                📍 {uni.address}
-                              </p>
-
+                              <p className="text-[#163832]/60 text-[10px]">📍 {uni.address}</p>
                               {uni.description && (
-                                <p className="text-[10px] text-slate-500 leading-normal line-clamp-1 mt-1" title={uni.description}>
-                                  {uni.description}
-                                </p>
+                                <p className="text-[10px] text-slate-500 leading-relaxed line-clamp-2">{uni.description}</p>
                               )}
                             </div>
 
-                            {/* Mini Badges strip */}
-                            <div className="flex flex-wrap gap-1 text-[8px] font-bold">
-                              <span className="px-1.5 py-0.5 bg-amber-50 text-amber-500 border border-amber-200/50 rounded">
-                                ЕНТ: {studentType === "school" ? uni.entMinSchool : uni.entMinCollege} б.
+                            {/* Badges */}
+                            <div className="flex flex-wrap gap-1.5 text-[9px] font-bold">
+                              <span className="px-2 py-1 bg-amber-50 text-amber-600 border border-amber-100 rounded-lg">
+                                ЕНТ {studentType === "school" ? uni.entMinSchool : uni.entMinCollege}+ б.
                               </span>
-                              <span className={`px-1.5 py-0.5 border rounded ${uni.hasHostel ? "bg-[#E2F4E9] border-[#8EB69B]/20 text-[#235347]" : "bg-neutral-50 text-neutral-500"}`}>
-                                {uni.hasHostel ? "Общежитие" : "Без общежития"}
-                              </span>
+                              {uni.hasHostel && (
+                                <span className="px-2 py-1 bg-[#E2F4E9] text-[#235347] border border-[#8EB69B]/20 rounded-lg">Общежитие</span>
+                              )}
                               {uni.hasGrants && (
-                                <span className="px-1.5 py-0.5 bg-blue-50 text-blue-800 border-blue-200/50 border rounded">
-                                  Гос. Гранты
-                                </span>
+                                <span className="px-2 py-1 bg-blue-50 text-blue-700 border border-blue-100 rounded-lg">Гос. гранты</span>
                               )}
+                              {uni.hasQuotas && (
+                                <span className="px-2 py-1 bg-violet-50 text-violet-700 border border-violet-100 rounded-lg">Квоты</span>
+                              )}
+                              <span className="px-2 py-1 bg-slate-50 text-slate-500 border border-slate-100 rounded-lg">
+                                {uni.languages.map(l => l.toUpperCase()).join(" · ")}
+                              </span>
                             </div>
 
-                            {/* Dynamic matched professions */}
+                            {/* Professions */}
                             {(() => {
                               const available = getAvailableProfessionsForUniversity(uni);
                               if (available.length === 0) return null;
                               return (
-                                <div className="space-y-1.5 pt-1">
+                                <div className="space-y-1.5">
                                   <span className="text-[10px] font-bold text-[#235347] uppercase tracking-wider block">
-                                    💼 Профессии в ВУЗе ({available.length}):
+                                    Профессии в ВУЗе ({available.length}):
                                   </span>
                                   <div className="flex flex-wrap gap-1">
                                     {available.slice(0, 5).map((ap, apIdx) => (
-                                      <span 
-                                        key={apIdx} 
+                                      <span
+                                        key={apIdx}
                                         className="px-2 py-0.5 bg-slate-50 text-slate-700 border border-slate-200/60 rounded-md text-[9px] font-semibold flex items-center gap-1"
-                                        title={`${ap.professionName} (${ap.subcategory} - ${ap.specialtyName})`}
+                                        title={`${ap.professionName} (${ap.subcategory})`}
                                       >
                                         <span className="text-[8px] text-[#235347] font-mono font-black">{ap.bCode}</span>
                                         <span className="truncate max-w-[130px]">{ap.professionName}</span>
@@ -552,7 +571,7 @@ export default function CatalogScreen({ universities, onRefresh }: CatalogScreen
                                     ))}
                                     {available.length > 5 && (
                                       <span className="px-1.5 py-0.5 bg-[#E2F4E9]/50 text-[#235347] border border-[#8EB69B]/20 rounded-md text-[9px] font-black">
-                                        + еще {available.length - 5}
+                                        + {available.length - 5}
                                       </span>
                                     )}
                                   </div>
@@ -560,21 +579,16 @@ export default function CatalogScreen({ universities, onRefresh }: CatalogScreen
                               );
                             })()}
 
-                            {/* Bottom strip actions */}
-                            <div className="flex items-center justify-between pt-2 border-t border-[#8EB69B]/10">
-                              <span className="text-[9px] text-[#235347] font-bold uppercase">
-                                Языки: {uni.languages.map(l => l.toUpperCase()).join(", ")}
-                              </span>
-
-                              <button 
+                            {/* Footer */}
+                            <div className="flex items-center justify-end pt-3 border-t border-slate-100">
+                              <button
                                 onClick={() => setActiveUni(uni)}
-                                className="px-4 py-2 bg-[#235347] hover:bg-[#0B2B26] transition text-white rounded-xl text-[10px] font-bold uppercase tracking-wider"
+                                className="px-5 py-2 bg-[#235347] hover:bg-[#0B2B26] transition text-white rounded-xl text-[10px] font-bold uppercase tracking-wide"
                               >
-                                Специальности
+                                Программы →
                               </button>
                             </div>
                           </div>
-
                         </div>
                       );
                     })}
@@ -631,10 +645,11 @@ export default function CatalogScreen({ universities, onRefresh }: CatalogScreen
               {/* Left Column: Image, quick parameters and contact actions */}
               <div className="w-full md:w-80 bg-[#E2F4E9]/30 border-b md:border-b-0 md:border-r border-[#8EB69B]/10 flex flex-col p-6 space-y-4 overflow-y-auto flex-shrink-0">
                 <div className="relative rounded-2xl overflow-hidden shadow-3xs h-40 md:h-48 flex-shrink-0 bg-neutral-100 border border-[#8EB69B]/20">
-                  <img 
-                    src={activeUni.imageUrl || getUniversityFallbackImage(activeUni.id, activeUni.name)} 
-                    alt={activeUni.name} 
+                  <img
+                    src={activeUni.imageUrl || getUniversityFallbackImage(activeUni.id, activeUni.name)}
+                    alt={activeUni.name}
                     referrerPolicy="no-referrer"
+                    onError={(e) => { const el = e.currentTarget as HTMLImageElement; if (!el.src.includes('unsplash.com')) { el.src = getUniversityFallbackImage(activeUni.id, activeUni.name); } }}
                     className="w-full h-full object-cover"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none"></div>
@@ -761,11 +776,44 @@ export default function CatalogScreen({ universities, onRefresh }: CatalogScreen
                           </div>
                           <div className="p-4 divide-y divide-slate-100">
                             {fac.specialties?.map((sp, sIdx) => (
-                              <div key={sIdx} className="py-3 first:pt-0 last:pb-0 space-y-1">
-                                <div className="flex items-center gap-2">
-                                  <span className="bg-[#E2F4E9] text-[#235347] text-[10px] px-2 py-0.5 rounded-md font-extrabold border border-[#8EB69B]/20">{sp.code}</span>
-                                  <h6 className="text-[11px] font-bold text-[#051F20]">{sp.name}</h6>
+                              <div key={sIdx} className="py-3 first:pt-0 last:pb-0 space-y-2">
+                                <div className="flex items-center flex-wrap gap-2">
+                                  <span className="bg-[#E2F4E9] text-[#235347] text-[10px] px-2 py-0.5 rounded-md font-extrabold border border-[#8EB69B]/20 shrink-0">{sp.code}</span>
+                                  <h6 className="text-[11px] font-bold text-[#051F20] flex-1">{sp.name}</h6>
+                                  {sp.hasGrant && (
+                                    <span className="text-[9px] bg-blue-50 text-blue-700 border border-blue-100 px-2 py-0.5 rounded-md font-bold shrink-0">
+                                      Грант{sp.grantPlaces ? ` (${sp.grantPlaces} мест)` : ""}
+                                    </span>
+                                  )}
                                 </div>
+                                {(sp.tuitionFee || sp.collegeTransferFee || sp.entMinScore || sp.duration) && (
+                                  <div className="grid grid-cols-2 md:grid-cols-4 gap-1.5 pl-1">
+                                    {sp.tuitionFee && (
+                                      <div className="bg-amber-50 border border-amber-100 rounded-lg p-2 text-center">
+                                        <span className="text-[8px] text-amber-600 block font-bold uppercase leading-none">Стоимость/год</span>
+                                        <strong className="text-[10px] text-amber-800 block leading-tight mt-0.5">{sp.tuitionFee.toLocaleString()} ₸</strong>
+                                      </div>
+                                    )}
+                                    {sp.collegeTransferFee && (
+                                      <div className="bg-[#E2F4E9]/60 border border-[#8EB69B]/20 rounded-lg p-2 text-center">
+                                        <span className="text-[8px] text-[#235347] block font-bold uppercase leading-none">После колледжа</span>
+                                        <strong className="text-[10px] text-[#235347] block leading-tight mt-0.5">{sp.collegeTransferFee.toLocaleString()} ₸</strong>
+                                      </div>
+                                    )}
+                                    {sp.entMinScore && (
+                                      <div className="bg-orange-50 border border-orange-100 rounded-lg p-2 text-center">
+                                        <span className="text-[8px] text-orange-600 block font-bold uppercase leading-none">Мин. ЕНТ</span>
+                                        <strong className="text-[10px] text-orange-800 block leading-tight mt-0.5">{sp.entMinScore} баллов</strong>
+                                      </div>
+                                    )}
+                                    {sp.duration && (
+                                      <div className="bg-slate-50 border border-slate-200 rounded-lg p-2 text-center">
+                                        <span className="text-[8px] text-slate-500 block font-bold uppercase leading-none">Срок</span>
+                                        <strong className="text-[10px] text-slate-700 block leading-tight mt-0.5">{sp.duration}</strong>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
                                 <p className="text-[10px] text-slate-500 leading-relaxed pl-1">{sp.description}</p>
                               </div>
                             ))}

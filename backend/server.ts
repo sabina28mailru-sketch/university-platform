@@ -43,8 +43,8 @@ app.post("/api/universities", async (req, res) => {
       `INSERT INTO universities VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)`,
       [u.id, u.name, u.address||"", u.contacts||"",
        u.entMinSchool||0, u.entMinCollege||0,
-       u.hasHostel||false, u.hostelDetails||"",
-       JSON.stringify(u.languages||[]), u.hasGrants||false, u.hasQuotas||false,
+       u.hasHostel ? 1 : 0, u.hostelDetails||"",
+       JSON.stringify(u.languages||[]), u.hasGrants ? 1 : 0, u.hasQuotas ? 1 : 0,
        u.tuitionFee||0, u.deadlines||"",
        JSON.stringify(u.faculties||[]), u.imageUrl||"", u.description||""]
     );
@@ -65,8 +65,8 @@ app.put("/api/universities/:id", async (req, res) => {
        WHERE id=$1`,
       [id, u.name, u.address||"", u.contacts||"",
        u.entMinSchool||0, u.entMinCollege||0,
-       u.hasHostel||false, u.hostelDetails||"",
-       JSON.stringify(u.languages||[]), u.hasGrants||false, u.hasQuotas||false,
+       u.hasHostel ? 1 : 0, u.hostelDetails||"",
+       JSON.stringify(u.languages||[]), u.hasGrants ? 1 : 0, u.hasQuotas ? 1 : 0,
        u.tuitionFee||0, u.deadlines||"",
        JSON.stringify(u.faculties||[]), u.imageUrl||"", u.description||""]
     );

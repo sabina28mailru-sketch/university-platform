@@ -672,10 +672,11 @@ const getProfessionKeywords = (profName: string): string[] => {
                 >
                   {/* Image Header Block */}
                   <div className="h-44 w-full overflow-hidden relative group bg-neutral-100 flex-shrink-0">
-                    <img 
-                      src={coverImg} 
-                      alt={uni.name} 
+                    <img
+                      src={coverImg}
+                      alt={uni.name}
                       referrerPolicy="no-referrer"
+                      onError={(e) => { const el = e.currentTarget as HTMLImageElement; if (!el.src.includes('unsplash.com')) { el.src = getUniversityFallbackImage(uni.id, uni.name); } }}
                       className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-transparent"></div>
@@ -810,10 +811,11 @@ const getProfessionKeywords = (profName: string): string[] => {
               {/* Left Column: Image, quick parameters and contact actions */}
               <div className="w-full md:w-80 bg-[#E2F4E9]/30 border-b md:border-b-0 md:border-r border-[#8EB69B]/10 flex flex-col p-6 space-y-4 overflow-y-auto flex-shrink-0">
                 <div className="relative rounded-2xl overflow-hidden shadow-3xs h-40 md:h-48 flex-shrink-0 bg-neutral-100 border border-[#8EB69B]/20">
-                  <img 
-                    src={activeUni.imageUrl || getUniversityFallbackImage(activeUni.id, activeUni.name)} 
-                    alt={activeUni.name} 
+                  <img
+                    src={activeUni.imageUrl || getUniversityFallbackImage(activeUni.id, activeUni.name)}
+                    alt={activeUni.name}
                     referrerPolicy="no-referrer"
+                    onError={(e) => { const el = e.currentTarget as HTMLImageElement; if (!el.src.includes('unsplash.com')) { el.src = getUniversityFallbackImage(activeUni.id, activeUni.name); } }}
                     className="w-full h-full object-cover"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none"></div>
@@ -940,11 +942,44 @@ const getProfessionKeywords = (profName: string): string[] => {
                           </div>
                           <div className="p-4 divide-y divide-slate-100">
                             {fac.specialties?.map((sp, sIdx) => (
-                              <div key={sIdx} className="py-3 first:pt-0 last:pb-0 space-y-1">
-                                <div className="flex items-center gap-2">
-                                  <span className="bg-[#E2F4E9] text-[#235347] text-[10px] px-2 py-0.5 rounded-md font-extrabold border border-[#8EB69B]/20">{sp.code}</span>
-                                  <h6 className="text-[11px] font-bold text-[#051F20]">{sp.name}</h6>
+                              <div key={sIdx} className="py-3 first:pt-0 last:pb-0 space-y-2">
+                                <div className="flex items-center flex-wrap gap-2">
+                                  <span className="bg-[#E2F4E9] text-[#235347] text-[10px] px-2 py-0.5 rounded-md font-extrabold border border-[#8EB69B]/20 shrink-0">{sp.code}</span>
+                                  <h6 className="text-[11px] font-bold text-[#051F20] flex-1">{sp.name}</h6>
+                                  {sp.hasGrant && (
+                                    <span className="text-[9px] bg-blue-50 text-blue-700 border border-blue-100 px-2 py-0.5 rounded-md font-bold shrink-0">
+                                      Грант{sp.grantPlaces ? ` (${sp.grantPlaces} мест)` : ""}
+                                    </span>
+                                  )}
                                 </div>
+                                {(sp.tuitionFee || sp.collegeTransferFee || sp.entMinScore || sp.duration) && (
+                                  <div className="grid grid-cols-2 md:grid-cols-4 gap-1.5 pl-1">
+                                    {sp.tuitionFee && (
+                                      <div className="bg-amber-50 border border-amber-100 rounded-lg p-2 text-center">
+                                        <span className="text-[8px] text-amber-600 block font-bold uppercase leading-none">Стоимость/год</span>
+                                        <strong className="text-[10px] text-amber-800 block leading-tight mt-0.5">{sp.tuitionFee.toLocaleString()} ₸</strong>
+                                      </div>
+                                    )}
+                                    {sp.collegeTransferFee && (
+                                      <div className="bg-[#E2F4E9]/60 border border-[#8EB69B]/20 rounded-lg p-2 text-center">
+                                        <span className="text-[8px] text-[#235347] block font-bold uppercase leading-none">После колледжа</span>
+                                        <strong className="text-[10px] text-[#235347] block leading-tight mt-0.5">{sp.collegeTransferFee.toLocaleString()} ₸</strong>
+                                      </div>
+                                    )}
+                                    {sp.entMinScore && (
+                                      <div className="bg-orange-50 border border-orange-100 rounded-lg p-2 text-center">
+                                        <span className="text-[8px] text-orange-600 block font-bold uppercase leading-none">Мин. ЕНТ</span>
+                                        <strong className="text-[10px] text-orange-800 block leading-tight mt-0.5">{sp.entMinScore} баллов</strong>
+                                      </div>
+                                    )}
+                                    {sp.duration && (
+                                      <div className="bg-slate-50 border border-slate-200 rounded-lg p-2 text-center">
+                                        <span className="text-[8px] text-slate-500 block font-bold uppercase leading-none">Срок</span>
+                                        <strong className="text-[10px] text-slate-700 block leading-tight mt-0.5">{sp.duration}</strong>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
                                 <p className="text-[10px] text-slate-500 leading-relaxed pl-1">{sp.description}</p>
                               </div>
                             ))}
