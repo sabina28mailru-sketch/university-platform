@@ -310,14 +310,8 @@ export default function App() {
         <div className="kz-container px-6 py-4 md:py-5 flex flex-col md:flex-row items-center justify-between gap-4">
           
           {/* Logo & Platform Info */}
-          <div className="flex items-center gap-3 self-start md:self-auto">
-            <div className="w-9 h-9 rounded-xl bg-[#235347] flex items-center justify-center shadow shrink-0">
-              <span className="text-white font-black text-lg leading-none">U</span>
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-[#051F20] tracking-tight leading-none">UniSearch.kz</h1>
-              <span className="text-[10px] text-[#163832] font-semibold mt-1 block">Цифровая платформа ВУЗов Казахстана</span>
-            </div>
+          <div className="flex items-center self-start md:self-auto">
+            <img src="/logo.png" alt="UniSearch.kz" className="h-12 w-auto object-contain" />
           </div>
 
           {/* Tab-like core navigation items */}
